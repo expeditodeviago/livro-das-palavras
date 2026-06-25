@@ -8,7 +8,8 @@ const dbUrl = process.env.DATABASE_URL ||
   process.env.POSTGRES_PRISMA_URL || 
   process.env.livrodaspalavras_PRISMA_DATABASE_URL ||
   process.env.livrodaspalavras_POSTGRES_URL ||
-  Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('postgres://') && v.includes('prisma.io')) as string;
+  (Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('postgres://') && v.includes('prisma.io')) as string) ||
+  "postgres://b219d59fe7c6c1c0b1669c5a23ba148b1bd2c04b844e40f66ccea3be7383a5c2:sk_3lnl43fY9updLeolLJgtY@db.prisma.io:5432/postgres?sslmode=require";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
