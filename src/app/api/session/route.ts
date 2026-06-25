@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getOrCreateTodaySession } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 // Helper para obter a data no formato YYYY-MM-DD
 function getLocalDateString() {
   const d = new Date();
