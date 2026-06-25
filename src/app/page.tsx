@@ -76,10 +76,10 @@ export default function HomePage() {
     );
   }
 
-  const { session, words, streak } = data;
+  const { session, words = [], streak } = data;
   const masteredWords = 0; // We don't have the db query locally on client, so we mock it or fetch it. Let's just use 0 for now as placeholder for the UI.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const totalStudied = words.length;
+  const totalStudied = words?.length || 0;
 
   return (
     <main className="container">
