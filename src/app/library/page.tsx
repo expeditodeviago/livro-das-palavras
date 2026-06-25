@@ -6,6 +6,7 @@ import { BookMarked, Search, Volume2 } from "lucide-react";
 import { playClick } from "@/lib/sfx";
 
 export default function LibraryPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [words, setWords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

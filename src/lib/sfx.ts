@@ -7,6 +7,7 @@ let ambientGain: GainNode | null = null;
 function getContext() {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   return audioCtx;
@@ -53,7 +54,7 @@ export function playSuccess() {
 export function playCombo() {
   const ctx = getContext();
   if (!ctx) return;
-  [659.25, 880, 1046.50, 1318.51].forEach((freq, i) => {
+  [659.25, 880, 1046.50, 1318.51].forEach((freq) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "triangle";

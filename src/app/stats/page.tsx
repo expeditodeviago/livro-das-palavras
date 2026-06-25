@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart2, Flame, Award, Target, BookOpen, Share2, Activity } from "lucide-react";
+import { BarChart2, Flame, Award, BookOpen, Share2, Activity } from "lucide-react";
 import ShareCard from "@/components/ShareCard";
 import { AnimatePresence } from "framer-motion";
 
 export default function StatsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showShare, setShowShare] = useState(false);

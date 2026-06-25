@@ -137,7 +137,7 @@ export default function ShareCard({ streak, masteredWords, difficultyLevel, onCl
               </div>
 
               <p style={{ fontStyle: 'italic', color: 'var(--ink-light)', fontSize: '1.1rem', fontFamily: "'Cormorant Garamond', serif" }}>
-                "{getMessage()}"
+                &quot;{getMessage()}&quot;
               </p>
               
               <div style={{ marginTop: '2rem', fontSize: '0.7rem', color: 'var(--ink-muted)', letterSpacing: '0.1em' }}>

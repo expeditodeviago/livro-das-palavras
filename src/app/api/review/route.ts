@@ -33,7 +33,7 @@ export async function GET() {
         include: { word: true }
       });
       
-      let extraWords = additionalProgress.map(p => p.word).filter(w => !wordsToReview.some(ew => ew.id === w.id));
+      const extraWords = additionalProgress.map(p => p.word).filter(w => !wordsToReview.some(ew => ew.id === w.id));
       const validExtra = extraWords.filter(w => w.word.length > 3).slice(0, needed);
       if (validExtra.length < needed) validExtra.push(...extraWords.filter(w => w.word.length <= 3).slice(0, needed - validExtra.length));
       
@@ -47,7 +47,7 @@ export async function GET() {
         take: needed * 5,
         include: { word: true }
       });
-      let fallbackWords = fallbackProgress.map(p => p.word).filter(w => !wordsToReview.some(ew => ew.id === w.id));
+      const fallbackWords = fallbackProgress.map(p => p.word).filter(w => !wordsToReview.some(ew => ew.id === w.id));
       const validFallback = fallbackWords.filter(w => w.word.length > 3).slice(0, needed);
       if (validFallback.length < needed) validFallback.push(...fallbackWords.filter(w => w.word.length <= 3).slice(0, needed - validFallback.length));
       
