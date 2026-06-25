@@ -4,7 +4,18 @@ export const StorageKeys = {
   PREFERENCES: "grimoire_preferences",
   STREAK: "grimoire_streak",
   PROGRESS: "grimoire_progress",
+  CLIENT_ID: "grimoire_client_id",
 };
+
+export function getClientId(): string {
+  if (typeof window === "undefined") return "server_rendering";
+  let clientId = localStorage.getItem(StorageKeys.CLIENT_ID);
+  if (!clientId) {
+    clientId = crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem(StorageKeys.CLIENT_ID, clientId);
+  }
+  return clientId;
+}
 
 export function saveLocal<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;

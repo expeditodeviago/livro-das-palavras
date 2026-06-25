@@ -1,9 +1,9 @@
 import { db } from "./db";
 
-export async function getOrCreateTodaySession(clientDate: string) {
-  // 1. Verificar se já existe uma sessão para este dia
+export async function getOrCreateTodaySession(clientDate: string, userId: string) {
+  // 1. Verificar se já existe uma sessão para este dia e usuário
   let session = await db.dailySession.findUnique({
-    where: { date: clientDate },
+    where: { userId_date: { userId, date: clientDate } },
   });
 
   let wordIdsList: number[] = [];
@@ -16,10 +16,10 @@ export async function getOrCreateTodaySession(clientDate: string) {
   } else {
     // 2. Criar nova sessão diária com 20 palavras
     // Regra da Repetição Espaçada (Leitner System):
-    // - Seleciona primeiro as palavras em andamento que estão "vencidas" (nextReview <= agora)
     const now = new Date();
     const reviewProgress = await db.userProgress.findMany({
       where: {
+        userId: userId,
         nextReview: {
           lte: now,
         },
@@ -33,10 +33,10 @@ export async function getOrCreateTodaySession(clientDate: string) {
     const dueWordIds = reviewProgress.map((p) => p.wordId);
     wordIdsList = [...dueWordIds];
 
-    // - Se não houver 20 palavras vencidas, completa com palavras novas na ordem de rank
+    // Se não houver 20 palavras vencidas, completa com palavras novas na ordem de rank
     if (wordIdsList.length < 20) {
       let maxRank = 1000;
-      const prefs = await db.userPreferences.findFirst();
+      const prefs = await db.userPreferences.findUnique({ where: { userId } });
       const diff = prefs?.difficultyLevel || "APRENDIZ";
       
       if (diff === "APRENDIZ") maxRank = 200;
@@ -49,9 +49,11 @@ export async function getOrCreateTodaySession(clientDate: string) {
       const newWords = await db.word.findMany({
         where: {
           id: {
-            notIn: wordIdsList.length > 0 ? wordIdsList : [0], // Evita array vazio
+            notIn: wordIdsList.length > 0 ? wordIdsList : [0],
           },
-          progress: null, // Palavras que nunca foram estudadas
+          progress: {
+            none: { userId }
+          },
           rank: {
             lte: maxRank,
           }
@@ -74,7 +76,7 @@ export async function getOrCreateTodaySession(clientDate: string) {
       wordIdsList = [...wordIdsList, ...newWordIds];
     }
 
-    // Se ainda assim não tiver palavras suficientes (ex: fim do dicionário), pega palavras aleatórias já estudadas
+    // Se ainda assim não tiver palavras suficientes, pega palavras aleatórias já estudadas
     if (wordIdsList.length < 20) {
       const needed = 20 - wordIdsList.length;
       const fallbackWords = await db.word.findMany({
@@ -100,6 +102,7 @@ export async function getOrCreateTodaySession(clientDate: string) {
     // Salva a nova sessão no banco de dados
     session = await db.dailySession.create({
       data: {
+        userId: userId,
         date: clientDate,
         wordIds: wordIdsList.join(","),
         wordsCount: wordIdsList.length,
@@ -116,27 +119,35 @@ export async function getOrCreateTodaySession(clientDate: string) {
       },
     },
     include: {
-      progress: true,
+      progress: {
+        where: { userId }
+      },
     },
   });
 
-  // Ordena as palavras para garantir que fiquem na ordem gerada
+  // Re-mapear para garantir que o array progress seja consistente
+  const wordsWithUserProgress = words.map(w => ({
+    ...w,
+    progress: w.progress.length > 0 ? w.progress[0] : null
+  }));
+
   const sortedWords = wordIdsList
-    .map((id) => words.find((w) => w.id === id))
+    .map((id) => wordsWithUserProgress.find((w) => w.id === id))
     .filter((word): word is NonNullable<typeof word> => Boolean(word));
 
   // 4. Buscar a streak atual para retornar junto
-  let streak = await db.streak.findFirst();
+  let streak = await db.streak.findUnique({ where: { userId } });
   if (!streak) {
     streak = await db.streak.create({
       data: {
+        userId,
         currentStreak: 0,
         longestStreak: 0,
       },
     });
   }
 
-  const prefs = await db.userPreferences.findFirst();
+  const prefs = await db.userPreferences.findUnique({ where: { userId } });
   const difficultyLevel = prefs?.difficultyLevel || "APRENDIZ";
 
   return {

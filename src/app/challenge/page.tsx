@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { Mic, Headphones, Turtle, Send, Skull, ShieldAlert, Sparkles, BookOpen, MessageCircle, Hourglass, Award, Swords, Timer } from "lucide-react";
 import { playClick, playSuccess, playError, playCombo, toggleAmbientHum } from "@/lib/sfx";
-import { saveLocal, getLocal, StorageKeys } from "@/lib/storage";
+import { saveLocal, getLocal, StorageKeys, getClientId } from "@/lib/storage";
 import OracleChat from "@/components/OracleChat";
 import ShareCard from "@/components/ShareCard";
 
@@ -70,6 +70,7 @@ function ChallengeContent() {
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
   const [shake, setShake] = useState(false);
   const [typedAnswer, setTypedAnswer] = useState("");
+  const [transcribedSpeech, setTranscribedSpeech] = useState<string | null>(null);
 
   const activeWord = words[currentWordIndex];
   
@@ -135,9 +136,10 @@ function ChallengeContent() {
       try {
         const todayStr = getLocalDateString();
         setCurrentDate(todayStr); // Update to actual local date right now
-        let url = `/api/session?date=${todayStr}`;
+        const clientId = getClientId();
+        let url = `/api/session?date=${todayStr}&userId=${clientId}`;
         if (isReviewMode) {
-          url = `/api/review`;
+          url = `/api/review?userId=${clientId}`;
         }
 
         const res = await fetch(url);
@@ -190,6 +192,7 @@ function ChallengeContent() {
 
       const data = await response.json();
       const speechText = data.text || "";
+      setTranscribedSpeech(speechText);
       
       const activeWord = words[currentWordIndex];
       if (!activeWord) return;
@@ -276,7 +279,7 @@ function ChallengeContent() {
   };
 
   const advanceChallenge = () => {
-    setFeedback(null); setTypedAnswer(""); setShowManualInput(false); setVoiceError(null);
+    setFeedback(null); setTypedAnswer(""); setShowManualInput(false); setVoiceError(null); setTranscribedSpeech(null);
     if (phase < 5) {
       const activePhaseLimit = phase * 4 - 1;
       if (currentWordIndex < activePhaseLimit) setCurrentWordIndex((prev) => prev + 1);
@@ -453,7 +456,7 @@ function ChallengeContent() {
       await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: currentDate, timeSpent, score, wordResults: answers }),
+        body: JSON.stringify({ date: currentDate, timeSpent, score, wordResults: answers, userId: getClientId() }),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cachedSession = getLocal<any>(StorageKeys.DAILY_SESSION);
@@ -470,7 +473,7 @@ function ChallengeContent() {
   };
 
   const jumpToPhase = (p: 1|2|3|4|5) => {
-    playClick(); setFeedback(null); setTypedAnswer(""); setSelectedCards([]); setMatchedCardIds([]);
+    playClick(); setFeedback(null); setTypedAnswer(""); setSelectedCards([]); setMatchedCardIds([]); setTranscribedSpeech(null);
     setPhase(p); setCurrentWordIndex((p - 1) * 4);
   };
 
@@ -746,6 +749,14 @@ function ChallengeContent() {
                   </motion.button>
                   {isRecording && <motion.p animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity }} style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>Escutando... (clique para parar)</motion.p>}
                   {isProcessingVoice && <motion.p animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity }} style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>Decifrando voz...</motion.p>}
+                  
+                  {transcribedSpeech !== null && !isProcessingVoice && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--gold)', borderRadius: '8px', background: 'rgba(212,175,55,0.1)' }}>
+                      <p style={{ color: 'var(--ink-light)', fontSize: '0.9rem', marginBottom: '5px' }}>Você conjurou:</p>
+                      <p style={{ color: 'var(--leather-dark)', fontSize: '1.5rem', fontWeight: 'bold', fontStyle: 'italic', fontFamily: 'serif' }}>"{transcribedSpeech}"</p>
+                    </motion.div>
+                  )}
+
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                     <button onClick={() => { playClick(); setShowManualInput(true); }} className="btn-outline">Usar Pena e Tinta (Teclado)</button>
                   </div>

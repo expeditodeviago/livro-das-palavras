@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Settings, User } from "lucide-react";
 import { playClick } from "@/lib/sfx";
+import { getClientId } from "@/lib/storage";
 
 const LEVELS = [
   { id: "APRENDIZ", label: "Aprendiz", desc: "Palavras básicas (1-200), dicas sonoras e tolerância a erros de digitação." },
@@ -24,7 +25,7 @@ export default function SettingsModal({ onClose, currentDifficulty, onUpdate }: 
       await fetch("/api/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficultyLevel: level })
+        body: JSON.stringify({ difficultyLevel: level, userId: getClientId() })
       });
       onUpdate(level);
       onClose();

@@ -8,7 +8,7 @@ import OracleChat from "@/components/OracleChat";
 import SettingsModal from "@/components/SettingsModal";
 import ShareCard from "@/components/ShareCard";
 import { playClick } from "@/lib/sfx";
-import { saveLocal, getLocal, StorageKeys } from "@/lib/storage";
+import { saveLocal, getLocal, StorageKeys, getClientId } from "@/lib/storage";
 import { Share2 } from "lucide-react";
 
 export default function HomePage() {
@@ -31,7 +31,8 @@ export default function HomePage() {
       }
 
       try {
-        const res = await fetch(`/api/session?date=${dateStr}`);
+        const clientId = getClientId();
+        const res = await fetch(`/api/session?date=${dateStr}&userId=${clientId}`);
         const json = await res.json();
         json.date = dateStr;
         setData(json);
@@ -94,11 +95,11 @@ export default function HomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 10, display: 'flex', gap: '10px' }}>
-          <button onClick={() => { playClick(); setShowShare(true); }} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', gap: '5px' }}>
+        <div className="top-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '2rem' }}>
+          <button onClick={() => { playClick(); setShowShare(true); }} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', gap: '5px', width: 'auto' }}>
             <Share2 size={16} /> Arte Mágica
           </button>
-          <button onClick={() => { playClick(); setShowSettings(true); }} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', gap: '5px' }}>
+          <button onClick={() => { playClick(); setShowSettings(true); }} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', gap: '5px', width: 'auto' }}>
             <Settings size={16} /> Nível: {data.difficultyLevel || 'Aprendiz'}
           </button>
         </div>

@@ -17,8 +17,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const clientDate = searchParams.get("date") || getLocalDateString();
+    const userId = searchParams.get("userId") || "default_user";
 
-    const data = await getOrCreateTodaySession(clientDate);
+    const data = await getOrCreateTodaySession(clientDate, userId);
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { date, timeSpent, score, wordResults } = body;
+    const { date, timeSpent, score, wordResults, userId = "default_user" } = body;
     // wordResults é um objeto do tipo: { [wordId: number]: boolean } (true = correto, false = incorreto)
 
     if (!date || !wordResults) {
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
     // 1. Buscar a sessão diária
     const session = await db.dailySession.findUnique({
-      where: { date },
+      where: { userId_date: { userId, date } },
     });
 
     if (!session) {
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
       if (isNaN(wordId)) continue;
 
       const progress = await db.userProgress.findUnique({
-        where: { wordId },
+        where: { userId_wordId: { userId, wordId } },
       });
 
       if (progress) {
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
           const nextReview = calculateNextReview(nextBox, now);
 
           await db.userProgress.update({
-            where: { wordId },
+            where: { userId_wordId: { userId, wordId } },
             data: {
               box: nextBox,
               streak: progress.streak + 1,
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
           const nextReview = calculateNextReview(1, now);
 
           await db.userProgress.update({
-            where: { wordId },
+            where: { userId_wordId: { userId, wordId } },
             data: {
               box: 1,
               streak: 0,
@@ -109,6 +110,7 @@ export async function POST(request: Request) {
           const nextReview = calculateNextReview(2, now); // Avança para caixa 2
           await db.userProgress.create({
             data: {
+              userId,
               wordId,
               box: 2,
               streak: 1,
@@ -121,6 +123,7 @@ export async function POST(request: Request) {
           const nextReview = calculateNextReview(1, now); // Fica na caixa 1
           await db.userProgress.create({
             data: {
+              userId,
               wordId,
               box: 1,
               streak: 0,
@@ -135,7 +138,7 @@ export async function POST(request: Request) {
 
     // 3. Atualizar a sessão diária como completa
     const updatedSession = await db.dailySession.update({
-      where: { date },
+      where: { userId_date: { userId, date } },
       data: {
         completed: true,
         completedAt: now,
@@ -145,10 +148,10 @@ export async function POST(request: Request) {
     });
 
     // 4. Atualizar o Streak do usuário
-    let streak = await db.streak.findFirst();
+    let streak = await db.streak.findUnique({ where: { userId } });
     if (!streak) {
       streak = await db.streak.create({
-        data: { currentStreak: 1, longestStreak: 1, lastActiveDate: date },
+        data: { userId, currentStreak: 1, longestStreak: 1, lastActiveDate: date },
       });
     } else {
       const lastActive = streak.lastActiveDate;

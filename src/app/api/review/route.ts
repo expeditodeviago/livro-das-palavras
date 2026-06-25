@@ -3,11 +3,15 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId") || "default_user";
+
     // Busca palavras onde o usuário já errou, ordenadas por mais erros
     const userProgress = await db.userProgress.findMany({
       where: {
+        userId: userId,
         incorrectAttempts: { gt: 0 }
       },
       orderBy: [
@@ -25,6 +29,7 @@ export async function GET() {
       const needed = 20 - wordsToReview.length;
       const additionalProgress = await db.userProgress.findMany({
         where: {
+          userId: userId,
           incorrectAttempts: 0,
           nextReview: { lte: new Date() }
         },
@@ -44,6 +49,7 @@ export async function GET() {
     if (wordsToReview.length < 20) {
       const needed = 20 - wordsToReview.length;
       const fallbackProgress = await db.userProgress.findMany({
+        where: { userId: userId },
         take: needed * 5,
         include: { word: true }
       });
@@ -67,10 +73,14 @@ export async function GET() {
         wordsToReview = [...wordsToReview, ...validNew];
     }
 
+    // Buscar as configurações de dificuldade do usuário
+    const prefs = await db.userPreferences.findUnique({ where: { userId } });
+    const difficultyLevel = prefs?.difficultyLevel || "APRENDIZ";
+
     // Embaralhar as palavras para o modo treino
     const shuffled = wordsToReview.sort(() => 0.5 - Math.random());
 
-    return NextResponse.json({ words: shuffled });
+    return NextResponse.json({ words: shuffled, difficultyLevel });
   } catch (error) {
     console.error("Erro ao gerar sessão de revisão:", error);
     return NextResponse.json(

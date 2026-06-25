@@ -3,12 +3,15 @@ import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    let prefs = await db.userPreferences.findFirst();
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId") || "default_user";
+
+    let prefs = await db.userPreferences.findUnique({ where: { userId } });
     if (!prefs) {
       prefs = await db.userPreferences.create({
-        data: { difficultyLevel: "APRENDIZ" }
+        data: { userId, difficultyLevel: "APRENDIZ" }
       });
     }
     return NextResponse.json(prefs);
@@ -20,12 +23,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { difficultyLevel } = await request.json();
+    const { difficultyLevel, userId = "default_user" } = await request.json();
     if (!difficultyLevel) {
       return NextResponse.json({ error: "Nível de dificuldade não fornecido" }, { status: 400 });
     }
 
-    let prefs = await db.userPreferences.findFirst();
+    let prefs = await db.userPreferences.findUnique({ where: { userId } });
     if (prefs) {
       prefs = await db.userPreferences.update({
         where: { id: prefs.id },
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
       });
     } else {
       prefs = await db.userPreferences.create({
-        data: { difficultyLevel }
+        data: { userId, difficultyLevel }
       });
     }
     

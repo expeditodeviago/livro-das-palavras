@@ -18,12 +18,13 @@ model Word {
   sentenceEn   String
   sentencePt   String
   rank         Int           @unique // De 1 a 1000, ordem de frequência
-  progress     UserProgress?
+  progress     UserProgress[]
 }
 
 model UserProgress {
   id                String   @id @default(uuid())
-  wordId            Int      @unique
+  userId            String   @default("default_user")
+  wordId            Int
   word              Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
   box               Int      @default(1) // Caixa do Leitner System (1 a 5)
   nextReview        DateTime @default(now())
@@ -32,11 +33,14 @@ model UserProgress {
   incorrectAttempts Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@unique([userId, wordId])
 }
 
 model DailySession {
   id          String    @id @default(uuid())
-  date        String    @unique // Formato: YYYY-MM-DD
+  userId      String    @default("default_user")
+  date        String    // Formato: YYYY-MM-DD
   completed   Boolean   @default(false)
   completedAt DateTime?
   score       Int       @default(0)
@@ -44,10 +48,13 @@ model DailySession {
   wordsCount  Int       @default(20) // Por padrão 20 palavras
   wordIds     String    @default("") // IDs das palavras separadas por vírgula
   createdAt   DateTime  @default(now())
+
+  @@unique([userId, date])
 }
 
 model Streak {
   id             String  @id @default(uuid())
+  userId         String  @default("default_user") @unique
   currentStreak  Int     @default(0)
   longestStreak  Int     @default(0)
   lastActiveDate String? // Formato: YYYY-MM-DD
@@ -55,6 +62,7 @@ model Streak {
 
 model UserPreferences {
   id              String  @id @default(uuid())
+  userId          String  @default("default_user") @unique
   difficultyLevel String  @default("APRENDIZ") // APRENDIZ, INICIANTE, INTERMEDIARIO, AVANCADO, MESTRE
   updatedAt       DateTime @updatedAt
 }
