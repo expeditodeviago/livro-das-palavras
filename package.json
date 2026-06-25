@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "DATABASE_URL=\"file:$SQLITE_DB_PATH\" npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
@@ -21,7 +21,8 @@
     "next": "16.2.9",
     "openai": "^6.44.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "tsx": "^4.22.4"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -30,7 +31,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "prisma": "^7.8.0",
-    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
