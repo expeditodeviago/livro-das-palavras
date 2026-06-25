@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Word {
+  id           Int           @id @default(autoincrement())
+  word         String        @unique
+  translation  String
+  phonetic     String?
+  sentenceEn   String
+  sentencePt   String
+  rank         Int           @unique // De 1 a 1000, ordem de frequência
+  progress     UserProgress?
+}
+
+model UserProgress {
+  id                String   @id @default(uuid())
+  wordId            Int      @unique
+  word              Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  box               Int      @default(1) // Caixa do Leitner System (1 a 5)
+  nextReview        DateTime @default(now())
+  streak            Int      @default(0) // Acertos consecutivos para esta palavra
+  correctAttempts   Int      @default(0)
+  incorrectAttempts Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model DailySession {
+  id          String    @id @default(uuid())
+  date        String    @unique // Formato: YYYY-MM-DD
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  score       Int       @default(0)
+  timeSpent   Int       @default(0) // Em segundos
+  wordsCount  Int       @default(20) // Por padrão 20 palavras
+  wordIds     String    @default("") // IDs das palavras separadas por vírgula
+  createdAt   DateTime  @default(now())
+}
+
+model Streak {
+  id             String  @id @default(uuid())
+  currentStreak  Int     @default(0)
+  longestStreak  Int     @default(0)
+  lastActiveDate String? // Formato: YYYY-MM-DD
+}
+
+model UserPreferences {
+  id              String  @id @default(uuid())
+  difficultyLevel String  @default("APRENDIZ") // APRENDIZ, INICIANTE, INTERMEDIARIO, AVANCADO, MESTRE
+  updatedAt       DateTime @updatedAt
+}
